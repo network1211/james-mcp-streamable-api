@@ -44,6 +44,23 @@ server.tool(
   }
 );
 
+
+server.tool(
+  'get_session',
+  'gets the session id and context',
+  {},
+  async ({}): Promise<CallToolResult> => {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `session`,
+        },
+      ],
+    };
+  }
+);
+
 // Register a tool that sends multiple greetings with notifications
 server.tool(
   'multi-greet',

@@ -22,16 +22,39 @@ Then build:
 npm run build
 ```
 
-Then actually run the server:
+## Running the Server
+
+### Production Mode
+
+To run the server in production mode:
 
 ```bash
+npm start
+# or directly with
 node build/index.js
 ```
+
 
 It runs on port 3000 by default. If you need another port, you can specify with the PORT env var.
 
 ```bash
+PORT=3002 npm start
+# or
 PORT=3002 node build/index.js
+```
+
+### Development Mode
+
+For development, you can use the dev mode which automatically watches for changes in your source files, rebuilds, and restarts the server:
+
+```bash
+npm run dev
+```
+
+With a custom port:
+
+```bash
+PORT=3002 npm run dev
 ```
 
 # Connect a Client
@@ -48,12 +71,8 @@ You can connect a client to your Streamable HTTP MCP Server once it's running. C
 }
 ```
 
-Known issues:
-- Inspector may have issue with Streamable HTTP servers. See issue: [https://github.com/modelcontextprotocol/inspector/pull/294#issuecomment-2817901110](https://github.com/modelcontextprotocol/inspector/pull/294#issuecomment-2817901110)
 
 Future enhancements:
-- run right from typescript instead of building and running
-- watch for changes and reload the server
 - handle oauth authentication
 - more tool examples
 

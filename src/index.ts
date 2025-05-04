@@ -1,3 +1,5 @@
+import axios from "axios";
+import * as html2text from "html2text";
 import { z } from 'zod';
 import { isInitializeRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import { ExpressHttpStreamableMcpServer } from "./server_runner.js";
@@ -12,82 +14,67 @@ const servers = ExpressHttpStreamableMcpServer(
     name: "streamable-mcp-server",
   },
   server => {
-
-    // ... set up server resources, tools, and prompts ...
+    // === Tool 1: fetch_url ===
     server.tool(
-      'greet',
-      'A simple greeting tool',
+      "fetch_url",
+      "Fetches the given URL and returns contents as markdown.",
       {
-        name: z.string().describe('Name to greet'),
+        url: z.string().describe("The full URL to fetch"),
       },
-      async ({ name }): Promise<CallToolResult> => {
-        console.log(`Tool Called: greet (name=${name})`);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Hello, ${name}!`,
-            },
-          ],
-        };
+      async ({ url }): Promise<CallToolResult> => {
+        try {
+          const res = await axios.get(url, { timeout: 10000 });
+          const markdown = html2text.fromString(res.data);
+          return {
+            content: [
+              {
+                type: "text",
+                text: markdown.slice(0, 5000),
+              },
+            ],
+          };
+        } catch (err: any) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error fetching URL: ${err.message}`,
+              },
+            ],
+          };
+        }
       }
     );
 
-
+    // === Tool 2: get_carpark_availability ===
     server.tool(
-      'get_session',
-      'gets the session id and context',
+      "get_carpark_availability",
+      "Fetches carpark availability data from Singapore Government API.",
       {},
-      async ({}): Promise<CallToolResult> => {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `session`,
-            },
-          ],
-        };
+      async (): Promise<CallToolResult> => {
+        try {
+          const res = await axios.get("https://api.data.gov.sg/v1/transport/carpark-availability", {
+            timeout: 10000,
+          });
+          return {
+            content: [
+              {
+		type: "text",
+                text: JSON.stringify(res.data, null, 2),
+              },
+            ],
+          };
+        } catch (err: any) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error fetching carpark data: ${err.message}`,
+              },
+            ],
+          };
+        }
       }
     );
-
-    // Register a tool that sends multiple greetings with notifications
-    server.tool(
-      'multi-greet',
-      'A tool that sends different greetings with delays between them',
-      {
-        name: z.string().describe('Name to greet'),
-      },
-      async ({ name }, { sendNotification }): Promise<CallToolResult> => {
-        console.log(`Tool Called: multi-greet (name=${name})`);
-        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-        await sendNotification({
-          method: "notifications/message",
-          params: { level: "debug", data: `Starting multi-greet for ${name}` }
-        });
-
-        await sleep(1000); // Wait 1 second before first greeting
-
-        await sendNotification({
-          method: "notifications/message",
-          params: { level: "info", data: `Sending first greeting to ${name}` }
-        });
-
-        await sleep(1000); // Wait another second before second greeting
-
-        await sendNotification({
-          method: "notifications/message",
-          params: { level: "info", data: `Sending second greeting to ${name}` }
-        });
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Good morning, ${name}!`,
-            }
-          ],
-        };
-      }
-    );
-})
+  }
+);

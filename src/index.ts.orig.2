@@ -1,24 +1,19 @@
 import axios from "axios";
 import * as html2text from "html2text";
 import { z } from 'zod';
-import https from 'https';
-// @ts-ignore
-import { CallToolResult } from "@modelcontextprotocol/sdk";
+import { isInitializeRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import { ExpressHttpStreamableMcpServer } from "./server_runner.js";
 
 const PORT = process.env.PORT || 3000;
-const API_KEY = 'my-secret-api-key';
 
-console.log("Initializing MCP Streamable-HTTP Server with Express");
+console.log("Initializing MCP Streamable-HTTP Server with Express")
 
-const agent = new https.Agent({ rejectUnauthorized: false });
 
 const servers = ExpressHttpStreamableMcpServer(
   {
     name: "streamable-mcp-server",
   },
   server => {
-
     // === Tool 1: fetch_url ===
     server.tool(
       "fetch_url",
@@ -64,7 +59,7 @@ const servers = ExpressHttpStreamableMcpServer(
           return {
             content: [
               {
-                type: "text",
+		type: "text",
                 text: JSON.stringify(res.data, null, 2),
               },
             ],
@@ -81,43 +76,5 @@ const servers = ExpressHttpStreamableMcpServer(
         }
       }
     );
-
-    // === Tool 3: private_sales_tool ===
-    server.tool(
-      "private_sales_tool",
-      "Fetches internal sales data from the private API using secured headers.",
-      {
-        path: z.string().describe("API path like /users or /users/1/performance")
-      },
-      async ({ path }): Promise<CallToolResult> => {
-        try {
-          const res = await axios.get(`https://api.jwleelabs.private${path}`, {
-            httpsAgent: agent,
-            headers: {
-              'X-API-Key': API_KEY
-            },
-            timeout: 10000
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(res.data, null, 2),
-              },
-            ],
-          };
-        } catch (err: any) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Error accessing private API at ${path}: ${err.message}`,
-              },
-            ],
-          };
-        }
-      }
-    );
   }
 );
-
